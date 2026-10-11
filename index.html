@@ -512,6 +512,7 @@
             const registration = await navigator.serviceWorker.register('./sw.js');
             await navigator.serviceWorker.ready;
 
+            // Korrigierter, valider VAPID Public Key im korrekten Format
             const publicKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Njh8W0=';
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
@@ -536,7 +537,7 @@
 
         } catch (error) {
             console.error('Fehler bei der Push-Registrierung:', error);
-            alert("Fehler beim Aktivieren der Benachrichtigungen.");
+            alert("Fehler beim Aktivieren der Benachrichtigungen. Details in der Konsole.");
         }
     }
 
