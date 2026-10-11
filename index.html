@@ -438,6 +438,7 @@
         </div>
         <div id="matchInputsContainer"></div>
         <button class="btn" onclick="saveAllScorers()">Manuelle Torschützen speichern</button>
+        <button class="btn" style="background: #238636; margin-top: 10px;" onclick="sendTestPush()">🚀 Test-Push Benachrichtigung senden</button>
     </div>
 
     <div class="admin-toggle-wrapper">
@@ -484,7 +485,7 @@
     let cloudScorers = {};
     let currentMatchday = parseInt(localStorage.getItem('bundesliga2_current_matchday')) || 6;
 
-    // Push Benachrichtigungen aktivieren und in Supabase speichern (ohne ECDSA-Key Fehler)
+    // Push Benachrichtigungen aktivieren und in Supabase speichern
     async function requestPushPermission() {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
             alert("Push-Benachrichtigungen werden von diesem Browser leider nicht unterstützt.");
@@ -515,8 +516,8 @@
             }, { onConflict: 'endpoint' });
 
             if (error) {
-                console.error("Fehler beim Speichern in Supabase:", error);
-                alert("Fehler beim Speichern des Push-Abos in der Datenbank.");
+                console.error("Supabase Fehlerdetails:", error);
+                alert("Fehler in Supabase: " + error.message);
             } else {
                 alert("Push-Alarm erfolgreich aktiviert! Dein Gerät ist jetzt registriert.");
             }
@@ -524,6 +525,34 @@
         } catch (error) {
             console.error('Fehler bei der Push-Registrierung:', error);
             alert("Fehler beim Aktivieren der Benachrichtigung: " + error.message);
+        }
+    }
+
+    // Test-Push an die Supabase Edge Function senden
+    async function sendTestPush() {
+        try {
+            const response = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                },
+                body: JSON.stringify({
+                    title: "⚽ Test-Tor-Alarm!",
+                    body: "Das Test-Tor wurde erfolgreich über die Edge Function ausgelöst!"
+                })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert("Test-Push wurde erfolgreich an die Edge Function gesendet!");
+                console.log("Push-Ergebnis:", result);
+            } else {
+                alert("Fehler beim Senden: " + (result.error || JSON.stringify(result)));
+            }
+        } catch (e) {
+            console.error("Netzwerkfehler:", e);
+            alert("Netzwerkfehler beim Aufruf der Edge Function.");
         }
     }
 
