@@ -528,14 +528,13 @@
         }
     }
 
-    // Test-Push an die Supabase Edge Function senden
+    // Test-Push an die Supabase Edge Function senden (robust mit Text-Antwort)
     async function sendTestPush() {
         try {
             const response = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     title: "⚽ Test-Tor-Alarm!",
@@ -543,16 +542,17 @@
                 })
             });
 
-            const result = await response.json();
+            const textResponse = await response.text();
+            
             if (response.ok) {
-                alert("Test-Push wurde erfolgreich an die Edge Function gesendet!");
-                console.log("Push-Ergebnis:", result);
+                alert("Test-Push erfolgreich ausgelöst! Gerät(e) sollten benachrichtigt werden.");
+                console.log("Antwort:", textResponse);
             } else {
-                alert("Fehler beim Senden: " + (result.error || JSON.stringify(result)));
+                alert("Fehler von der Edge Function: " + textResponse);
             }
         } catch (e) {
             console.error("Netzwerkfehler:", e);
-            alert("Netzwerkfehler beim Aufruf der Edge Function.");
+            alert("Netzwerkfehler: " + e.message);
         }
     }
 
