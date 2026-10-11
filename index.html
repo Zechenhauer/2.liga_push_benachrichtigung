@@ -528,11 +528,12 @@
         }
     }
 
-    // Test-Push an die Supabase Edge Function senden (robust mit Text-Antwort)
+    // Test-Push an die Supabase Edge Function senden (mit CORS-Modus abgesichert)
     async function sendTestPush() {
         try {
             const response = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
                 method: 'POST',
+                mode: 'cors',
                 headers: {
                     'Content-Type': 'application/json'
                 },
