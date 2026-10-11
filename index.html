@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2. BL</title>
+    <!-- Anpassung für Homescreen-Icon mit "OLDB" auf grünem Hintergrund -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%232ea043%22/><text x=%2250%22 y=%2263%22 font-size=%2230%22 font-weight=%22bold%22 fill=%22white%22 text-anchor=%22middle%22 font-family=%22sans-serif%22>OLDB</text></svg>">
+    <link rel="apple-touch-icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%232ea043%22/><text x=%2250%22 y=%2263%22 font-size=%2230%22 font-weight=%22bold%22 fill=%22white%22 text-anchor=%22middle%22 font-family=%22sans-serif%22>OLDB</text></svg>">
+    <!-- Supabase Client Bibliothek laden -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-color: #07090e;
+            --card-bg: #111622;
+            --card-inner: #0d121c;
+            --text-color: #f0f6fc;
+            --text-muted: #8b949e;
+            --border-color: #21262d;
+            --liga2-green: #2ea043;
+            --liga2-green-hover: #238636;
+            --liga2-dark: #0a0e17;
+            --liga2-bright-green: #3fb950;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            text-align: center;
+            margin: 0;
+            color: #ffffff;
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+        h2 span {
+            color: var(--liga2-bright-green);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .meta-info {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .supabase-badge {
+            color: #3fb950;
+            background: rgba(46, 160, 67, 0.15);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(46, 160, 67, 0.3);
+            font-weight: 600;
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .live-badge {
+            display: none;
+            color: #ff7b72;
+            background: rgba(248, 81, 73, 0.15);
+            padding: 3px 10px;
+            border-radius: 4px;
+            border: 1px solid rgba(248, 81, 73, 0.4);
+            font-weight: bold;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #f85149;
+            border-radius: 50%;
+            animation: pulse-red 1.2s infinite;
+        }
+
+        .section-box {
+            background: var(--card-inner);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            background-color: var(--liga2-green);
+            color: #ffffff;
+            border: 1px solid var(--border-color);
+            padding: 10px 15px;
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(46, 160, 67, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header-action-btn {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .header-action-btn:hover { background: rgba(0, 0, 0, 0.4); }
+
+        .matchday-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .matchday-btn {
+            background: #161b22;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .matchday-btn:hover { background: var(--liga2-dark); border-color: var(--liga2-green); }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+        th {
+            background-color: var(--liga2-dark);
+            color: #ffffff;
+            padding: 10px 8px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            border-bottom: 2px solid var(--liga2-green);
+        }
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+        tr:hover { background-color: rgba(46, 160, 67, 0.05); }
+
+        .team-cell-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .team-mini-logo {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        .admin-toggle-wrapper {
+            text-align: right;
+            margin-top: 15px;
+        }
+        .admin-toggle-btn {
+            background: transparent;
+            border: 1px dashed var(--border-color);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .admin-toggle-btn:hover {
+            color: var(--liga2-bright-green);
+            border-color: var(--liga2-green);
+        }
+
+        .admin-card {
+            background: #161b22;
+            border: 1px solid var(--liga2-green);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+        .match-input-card {
+            background: var(--card-inner);
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            align-items: end;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+        .form-control {
+            width: 100%;
+            padding: 6px;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        .form-control:focus { border-color: var(--liga2-green); outline: none; }
+
+        .btn {
+            background: var(--liga2-green);
+            color: #ffffff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            width: 100%;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: var(--liga2-green-hover); }
+
+        /* MODAL STYLES */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 15px;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--liga2-green);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            padding: 15px 20px;
+            background: var(--liga2-dark);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+        .modal-body {
+            padding: 15px 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .modal-close:hover { color: #ffffff; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="title-row">
+        <h2>2. <span>Bundesliga</span></h2>
+    </div>
+    <div class="subtitle" id="leagueSubtitle">Saison 2026/27 & Live-Daten</div>
+    <div class="meta-info">
+        <span>⚡ Web-App & Management: Jürgen Schützendorf</span>
+        <span class="supabase-badge" id="cloudStatusBadge">● OpenLigaDB & Cloud aktiv</span>
+        <div class="live-badge" id="liveIndicatorBadge"><span class="live-dot"></span> LIVE-SPIELE LÄUFT</div>
+    </div>
+
+    <!-- SPIELTAGS-TABELLE -->
+    <div class="section-box">
+        <div class="section-header">
+            <span id="matchdayTableHeader">Spieltag 1 — Spiele & Ergebnisse</span>
+            <div class="header-actions">
+                <button class="header-action-btn" onclick="requestPushPermission()">🔔 Push-Alarm</button>
+                <button class="header-action-btn" onclick="openLeagueScorersModal()">⚽ Torschützen</button>
+                <button class="header-action-btn" onclick="loadFromCloud(true)">🔄 Aktualisieren</button>
+            </div>
+        </div>
+        <div class="matchday-controls">
+            <button class="matchday-btn" onclick="changeMatchday(-1)">◀ Vorheriger</button>
+            <strong id="matchdayDisplay" style="color: var(--liga2-bright-green); font-size: 1.1rem;">Spieltag 1</strong>
+            <button class="matchday-btn" onclick="changeMatchday(1)">Nächster ▶</button>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 130px; color: #ffffff;">Termin</th>
+                        <th style="text-align: right;">Heimmannschaft</th>
+                        <th style="text-align: center; width: 180px;">Ergebnis / Status</th>
+                        <th>Gastmannschaft</th>
+                        <th style="width: 40px; text-align: center;"></th>
+                    </tr>
+                </thead>
+                <tbody id="matchdayTableBody">
+                    <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">Lade Spielplan von OpenLigaDB...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- GESAMT-TABELLE -->
+    <div class="section-box">
+        <div class="section-header">
+            <span>2. Bundesliga-Tabelle (Gesamt)</span>
+            <div class="header-actions">
+                <button class="header-action-btn" onclick="requestPushPermission()">🔔 Push-Alarm</button>
+                <button class="header-action-btn" onclick="openLeagueScorersModal()">⚽ Torschützen</button>
+                <button class="header-action-btn" onclick="loadFromCloud(true)">🔄 Aktualisieren</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 35px;">Pl.</th>
+                        <th>Mannschaft</th>
+                        <th style="text-align: center;">Sp</th>
+                        <th style="text-align: center;">S</th>
+                        <th style="text-align: center;">U</th>
+                        <th style="text-align: center;">N</th>
+                        <th style="text-align: center;">Tore</th>
+                        <th style="text-align: center;">Diff</th>
+                        <th style="text-align: center;">Punkte</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 20px;">Lade Tabelle...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: rgba(30, 64, 175, 0.6); border-radius: 2px; display: inline-block;"></span> Direkter Aufstieg (1. & 2. Platz - Blau)</div>
+            <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: rgba(234, 88, 12, 0.4); border-radius: 2px; display: inline-block;"></span> Relegationsplätze (3. & 16. Platz - Orange)</div>
+            <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: rgba(220, 38, 38, 0.3); border-radius: 2px; display: inline-block;"></span> Direkter Abstieg (17. & 18. Platz - Rot)</div>
+        </div>
+    </div>
+
+    <!-- ADMIN BEREICH -->
+    <div class="admin-card" id="adminCard">
+        <div style="font-weight: bold; color: var(--liga2-bright-green); margin-bottom: 12px; text-transform: uppercase; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+            <span>✏️ Manuelle Torschützen für <span id="adminMatchdayLabel">Spieltag 1</span> erfassen</span>
+            <span style="font-size: 0.7rem; color: #3fb950;">● Admin-Modus Aktiv</span>
+        </div>
+        <div id="matchInputsContainer"></div>
+        <button class="btn" onclick="saveAllScorers()">Manuelle Torschützen speichern</button>
+    </div>
+
+    <div class="admin-toggle-wrapper">
+        <button class="admin-toggle-btn" onclick="toggleAdminMode()">⚙️ Admin-Zugang</button>
+    </div>
+</div>
+
+<!-- TORSCHÜTZEN MODAL -->
+<div class="modal-overlay" id="leagueScorersModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin: 0; font-size: 1rem; color: var(--liga2-bright-green);">⚽ 2. Bundesliga Torschützenliste</h3>
+            <button class="modal-close" onclick="closeLeagueScorersModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">Pl.</th>
+                            <th>Spieler</th>
+                            <th style="text-align: center; width: 60px;">Tore</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leagueScorersModalBody">
+                        <tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Lade Torschützen...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://lhusylpjnujlqomougmg.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_yXEueWILvAq-Vm2VfTuYyg_BIQeE1KK';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const ADMIN_PIN = "1919";
+    let isAdmin = false;
+
+    let teamLogos = {};
+    let openLigaMatches = {};
+    let cloudScorers = {};
+    let currentMatchday = parseInt(localStorage.getItem('bundesliga2_current_matchday')) || 6;
+
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
+    // Push Benachrichtigungen aktivieren und in Supabase speichern
+    async function requestPushPermission() {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            alert("Push-Benachrichtigungen werden von diesem Browser leider nicht unterstützt.");
+            return;
+        }
+        
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                alert("Die Berechtigung für Benachrichtigungen wurde verweigert.");
+                return;
+            }
+
+            const registration = await navigator.serviceWorker.register('./sw.js');
+            await navigator.serviceWorker.ready;
+
+            const publicKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Njh8W0=';
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(publicKey)
+            });
+
+            const p256dh = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh'))));
+            const auth = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))));
+
+            const { error } = await supabaseClient.from('push_subscriptions').upsert({
+                endpoint: subscription.endpoint,
+                p256dh: p256dh,
+                auth: auth
+            }, { onConflict: 'endpoint' });
+
+            if (error) {
+                console.error("Fehler beim Speichern in Supabase:", error);
+                alert("Fehler beim Speichern des Push-Abos in der Datenbank.");
+            } else {
+                alert("Push-Alarm erfolgreich aktiviert! Dein Gerät ist jetzt registriert.");
+            }
+
+        } catch (error) {
+            console.error('Fehler bei der Push-Registrierung:', error);
+            alert("Fehler beim Aktivieren der Benachrichtigungen.");
+        }
+    }
+
+    function toggleAdminMode() {
+        const adminCard = document.getElementById('adminCard');
+        if (isAdmin) {
+            isAdmin = false;
+            adminCard.style.display = 'none';
+            renderMatchdayTable();
+            return;
+        }
+        let enteredPin = prompt("Bitte Admin-PIN eingeben:");
+        if (enteredPin === ADMIN_PIN) {
+            isAdmin = true;
+            adminCard.style.display = 'block';
+            renderAll();
+        } else if (enteredPin !== null) {
+            alert("Falsche PIN!");
+        }
+    }
+
+    async function loadFromCloud(showAlert = false) {
+        try {
+            let matchesRes = await supabaseClient.from('bundesliga2_spiele').select('*');
+
+            cloudScorers = {};
+            if (matchesRes.data && Array.isArray(matchesRes.data)) {
+                matchesRes.data.forEach(row => {
+                    if (row.match_id && row.goal_scorer) {
+                        cloudScorers[row.match_id] = row.goal_scorer;
+                    }
+                });
+            }
+
+            if (showAlert) alert("Daten erfolgreich aktualisiert!");
+        } catch (e) {
+            console.log('Ladehinweis:', e);
+            if (showAlert) alert("Fehler beim Aktualisieren der Daten.");
+        }
+
+        await fetchOpenLigaData();
+    }
+
+    async function fetchOpenLigaData() {
+        try {
+            let response = await fetch('https://api.openligadb.de/getmatchdata/bl2/2026');
+            let data = await response.json();
+
+            openLigaMatches = {};
+            let hasLiveMatches = false;
+
+            if (Array.isArray(data)) {
+                data.forEach(match => {
+                    if (match.team1 && match.team1.teamName && match.team1.teamIconUrl) {
+                        teamLogos[match.team1.teamName.trim().toLowerCase()] = match.team1.teamIconUrl;
+                    }
+                    if (match.team2 && match.team2.teamName && match.team2.teamIconUrl) {
+                        teamLogos[match.team2.teamName.trim().toLowerCase()] = match.team2.teamIconUrl;
+                    }
+
+                    let isCurrentlyLive = !match.matchIsFinished && match.matchResults && match.matchResults.length > 0;
+                    if (isCurrentlyLive) hasLiveMatches = true;
+
+                    let mDay = match.group && match.group.groupOrderID ? match.group.groupOrderID : 1;
+                    if (!openLigaMatches[mDay]) openLigaMatches[mDay] = [];
+
+                    let homeTeam = match.team1.teamName;
+                    let awayTeam = match.team2.teamName;
+                    let matchId = 'ol2_' + match.matchID;
+
+                    let homeScore = null;
+                    let awayScore = null;
+
+                    if (match.matchIsFinished && match.matchResults && match.matchResults.length > 0) {
+                        let res = match.matchResults.find(r => r.resultTypeID === 2) || match.matchResults[match.matchResults.length - 1];
+                        if (res) {
+                            homeScore = res.pointsTeam1;
+                            awayScore = res.pointsTeam2;
+                        }
+                    } else if (match.matchResults && match.matchResults.length > 0) {
+                        let res = match.matchResults[match.matchResults.length - 1];
+                        if (res && res.pointsTeam1 !== null && res.pointsTeam2 !== null) {
+                            homeScore = res.pointsTeam1;
+                            awayScore = res.pointsTeam2;
+                        }
+                    }
+
+                    let apiScorers = [];
+                    if (match.goals && Array.isArray(match.goals)) {
+                        match.goals.forEach(goal => {
+                            let name = goal.goalGetterName;
+                            if (name) {
+                                let min = (goal.matchMinute !== null && goal.matchMinute !== undefined) ? goal.matchMinute + "'" : "";
+                                let hPts = (goal.scoreTeam1 !== null && goal.scoreTeam1 !== undefined) ? goal.scoreTeam1 : goal.scoreGoal1;
+                                let aPts = (goal.scoreTeam2 !== null && goal.scoreTeam2 !== undefined) ? goal.scoreTeam2 : goal.scoreGoal2;
+                                
+                                let scoreStr = (hPts !== undefined && aPts !== undefined) ? ` (${hPts}:${aPts})` : "";
+                                let minStr = min ? ` (${min})` : "";
+                                apiScorers.push(`⚽ ${name}${minStr}${scoreStr}`);
+                            }
+                        });
+                    }
+
+                    let finalScorers = apiScorers.length > 0 ? apiScorers.join('<br>') : (cloudScorers[matchId] || "");
+
+                    let matchDateObj = new Date(match.matchDateTime);
+                    let dateStr = match.matchDateTime ? match.matchDateTime.split('T')[0] : "";
+                    let timeStr = !isNaN(matchDateObj.getTime()) ? matchDateObj.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : "15:30";
+
+                    openLigaMatches[mDay].push({
+                        match_id: matchId,
+                        home: homeTeam,
+                        away: awayTeam,
+                        date: dateStr,
+                        time: timeStr,
+                        homeScore: homeScore,
+                        awayScore: awayScore,
+                        isFinished: match.matchIsFinished,
+                        goal_scorer: finalScorers
+                    });
+                });
+            }
+
+            let liveBadge = document.getElementById('liveIndicatorBadge');
+            if (liveBadge) {
+                liveBadge.style.display = hasLiveMatches ? 'flex' : 'none';
+            }
+
+        } catch (e) {
+            console.error("Fehler beim Abrufen von OpenLigaDB (2. Bundesliga):", e);
+        }
+
+        renderAll();
+    }
+
+    function changeMatchday(amount) {
+        currentMatchday = Math.max(1, Math.min(34, currentMatchday + amount));
+        localStorage.setItem('bundesliga2_current_matchday', currentMatchday);
+        renderAll();
+    }
+
+    function renderAll() {
+        document.getElementById('matchdayDisplay').textContent = "Spieltag " + currentMatchday;
+        document.getElementById('adminMatchdayLabel').textContent = "Spieltag " + currentMatchday;
+        document.getElementById('matchdayTableHeader').textContent = "Spieltag " + currentMatchday + " — Spiele & Ergebnisse";
+        
+        renderMatchdayTable();
+        renderTable();
+        if (isAdmin) renderInputForm();
+    }
+
+    function getTeamHtml(teamName, alignRight = false) {
+        let logoUrl = teamLogos[teamName.trim().toLowerCase()];
+        let logoHtml = logoUrl ? '<img src="' + logoUrl + '" alt="' + teamName + '" class="team-mini-logo">' : '';
+
+        if (alignRight) {
+            return '<div class="team-cell-content" style="justify-content: flex-end;"><span>' + teamName + '</span>' + logoHtml + '</div>';
+        } else {
+            return '<div class="team-cell-content">' + logoHtml + '<span>' + teamName + '</span></div>';
+        }
+    }
+
+    function renderMatchdayTable() {
+        let tbody = document.getElementById('matchdayTableBody');
+        tbody.innerHTML = '';
+        let existingMatches = openLigaMatches[currentMatchday] || [];
+
+        if (existingMatches.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">Keine Spiele für Spieltag ' + currentMatchday + ' gefunden.</td></tr>';
+            return;
+        }
+
+        existingMatches.forEach((m) => {
+            let hasResult = m.homeScore !== undefined && m.homeScore !== null && m.awayScore !== undefined && m.awayScore !== null;
+            let formattedDate = m.date ? m.date.split('-').reverse().join('.') : '-';
+            let timeStr = m.time ? ' ' + m.time + ' Uhr' : '';
+
+            let resultDisplay = hasResult ? '<strong>' + m.homeScore + ':' + m.awayScore + '</strong>' : '<span style="color: var(--text-muted); font-style: italic;">vs</span>';
+            if (hasResult && m.isFinished) {
+                resultDisplay += '<div style="font-size: 0.65rem; color: #3fb950; margin-top: 2px;">(Endstand)</div>';
+            } else if (hasResult) {
+                resultDisplay += '<div style="font-size: 0.65rem; color: #f85149; margin-top: 2px; font-weight: bold;">● (Live)</div>';
+            }
+
+            if (m.goal_scorer && m.goal_scorer.trim() !== "") {
+                resultDisplay += '<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">' + m.goal_scorer + '</div>';
+            }
+
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-size: 0.8rem; color: #ffffff; vertical-align: top;">${formattedDate}${timeStr}</td>
+                <td style="text-align: right; vertical-align: top;">${getTeamHtml(m.home, true)}</td>
+                <td style="text-align: center; vertical-align: top;">${resultDisplay}</td>
+                <td style="vertical-align: top;">${getTeamHtml(m.away, false)}</td>
+                <td style="text-align: center; vertical-align: top;"></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderTable() {
+        let tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        let stats = {};
+
+        let allTeams = [];
+        Object.values(openLigaMatches).forEach(matchList => {
+            if (Array.isArray(matchList)) {
+                matchList.forEach(m => {
+                    if (!allTeams.includes(m.home)) allTeams.push(m.home);
+                    if (!allTeams.includes(m.away)) allTeams.push(m.away);
+                });
+            }
+        });
+
+        allTeams.forEach(t => { stats[t] = { name: t, played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }; });
+
+        Object.values(openLigaMatches).forEach(matchList => {
+            if (!Array.isArray(matchList)) return;
+            matchList.forEach(m => {
+                if (m.homeScore === undefined || m.homeScore === null || m.awayScore === undefined || m.awayScore === null) return;
+                let h = m.home, a = m.away;
+                if (!stats[h] || !stats[a]) return;
+                stats[h].played++; stats[a].played++;
+                stats[h].goalsFor += m.homeScore; stats[h].goalsAgainst += m.awayScore;
+                stats[a].goalsFor += m.awayScore; stats[a].goalsAgainst += m.homeScore;
+                if (m.homeScore > m.awayScore) { stats[h].won++; stats[h].points += 3; stats[a].lost++; }
+                else if (m.homeScore < m.awayScore) { stats[a].won++; stats[a].points += 3; stats[h].lost++; }
+                else { stats[h].draw++; stats[h].points += 1; stats[a].draw++; stats[a].points += 1; }
+            });
+        });
+
+        let sorted = Object.values(stats).sort((a, b) => b.points !== a.points ? b.points - a.points : (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst));
+        
+        if (sorted.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 20px;">Tabelle wird nach den ersten Spielen berechnet.</td></tr>`;
+            return;
+        }
+
+        sorted.forEach((s, idx) => {
+            let tr = document.createElement('tr');
+            let rank = idx + 1;
+
+            if (rank === 1 || rank === 2) {
+                tr.style.backgroundColor = "rgba(30, 64, 175, 0.4)";
+                tr.style.color = "#93c5fd";
+            } else if (rank === 3 || rank === 16) {
+                tr.style.backgroundColor = "rgba(234, 88, 12, 0.4)";
+                tr.style.color = "#fdba74";
+            } else if (rank >= 17 && sorted.length >= 15) {
+                tr.style.backgroundColor = "rgba(220, 38, 38, 0.3)";
+                tr.style.color = "#fca5a5";
+            }
+            
+            let diff = s.goalsFor - s.goalsAgainst;
+            tr.innerHTML = '<td><strong>' + rank + '.</strong></td><td>' + getTeamHtml(s.name, false) + '</td><td style="text-align: center;">' + s.played + '</td><td style="text-align: center;">' + s.won + '</td><td style="text-align: center;">' + s.draw + '</td><td style="text-align: center;">' + s.lost + '</td><td style="text-align: center;">' + s.goalsFor + ':' + s.goalsAgainst + '</td><td style="text-align: center;">' + (diff > 0 ? '+' : '') + diff + '</td><td style="text-align: center; font-weight: bold;">' + s.points + '</td>';
+            tbody.appendChild(tr);
+        });
+    }
+
+    function openLeagueScorersModal() {
+        let tbody = document.getElementById('leagueScorersModalBody');
+        tbody.innerHTML = '';
+        let scorersMap = {};
+
+        Object.values(openLigaMatches).forEach(matchList => {
+            if (!Array.isArray(matchList)) return;
+            matchList.forEach(m => {
+                if (m.goal_scorer && typeof m.goal_scorer === 'string') {
+                    let lines = m.goal_scorer.split('<br>');
+                    lines.forEach(line => {
+                        let cleanLine = line.replace('⚽', '').trim();
+                        if (!cleanLine) return;
+                        let playerName = cleanLine.split('(')[0].trim();
+                        if (playerName) {
+                            if (!scorersMap[playerName]) scorersMap[playerName] = 0;
+                            scorersMap[playerName]++;
+                        }
+                    });
+                }
+            });
+        });
+
+        let scorersArray = Object.keys(scorersMap).map(name => ({ name: name, goals: scorersMap[name] }));
+        if (scorersArray.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Noch keine Torschützen erfasst.</td></tr>`;
+        } else {
+            scorersArray.sort((a, b) => b.goals - a.goals);
+            scorersArray.forEach((s, idx) => {
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="text-align: center; font-weight: bold; color: var(--text-muted);">${idx + 1}.</td>
+                    <td>${s.name}</td>
+                    <td style="text-align: center; font-weight: bold; color: #3fb950;">${s.goals}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById('leagueScorersModal').style.display = 'flex';
+    }
+
+    function closeLeagueScorersModal() {
+        document.getElementById('leagueScorersModal').style.display = 'none';
+    }
+
+    function renderInputForm() {
+        let container = document.getElementById('matchInputsContainer');
+        container.innerHTML = '';
+        let existingMatches = openLigaMatches[currentMatchday] || [];
+
+        if (existingMatches.length === 0) {
+            container.innerHTML = `<div style="color: var(--text-muted); font-size: 0.8rem;">Keine Spiele an diesem Spieltag.</div>`;
+            return;
+        }
+
+        existingMatches.forEach((m) => {
+            let card = document.createElement('div');
+            card.className = 'match-input-card';
+            card.innerHTML = `
+                <div style="font-size: 0.8rem; color: #3fb950; font-weight: bold; margin-bottom: 8px;">${m.home} vs ${m.away}</div>
+                <div class="form-grid">
+                    <div class="form-group"><label>Torschützen manuell überschreiben</label><input type="text" id="bs_${m.match_id}" class="form-control" value="${m.goal_scorer || ''}" placeholder="Torschützen eingeben..."></div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    async function saveAllScorers() {
+        let existingMatches = openLigaMatches[currentMatchday] || [];
+
+        for (let m of existingMatches) {
+            let inputElem = document.getElementById('bs_' + m.match_id);
+            if (inputElem) {
+                let val = inputElem.value.trim();
+                m.goal_scorer = val;
+                cloudScorers[m.match_id] = val;
+
+                await supabaseClient.from('bundesliga2_spiele').upsert({
+                    match_id: m.match_id,
+                    matchday: currentMatchday,
+                    home_team: m.home,
+                    away_team: m.away,
+                    goal_scorer: val
+                }, { onConflict: 'match_id' });
+            }
+        }
+
+        renderAll();
+        alert("Torschützen erfolgreich in der Cloud gespeichert!");
+    }
+
+    loadFromCloud();
+    setInterval(() => {
+        fetchOpenLigaData();
+    }, 30000);
+</script>
+
+</body>
+</html>
