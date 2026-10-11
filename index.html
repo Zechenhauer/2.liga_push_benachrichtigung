@@ -483,6 +483,7 @@
     let teamLogos = {};
     let openLigaMatches = {};
     let cloudScorers = {};
+    let previousScores = {}; // Speichert die letzten Stände zur automatischen Toraerkennung
     let currentMatchday = parseInt(localStorage.getItem('bundesliga2_current_matchday')) || 6;
 
     // VAPID Public Key Helper für Base64-Konvertierung
@@ -572,6 +573,24 @@
         }
     }
 
+    // Automatischer Push bei echtem Tor
+    async function triggerAutomaticGoalPush(home, away, hScore, aScore) {
+        try {
+            await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+                method: 'POST',
+                mode: 'cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: `⚽ TOR! (${hScore}:${aScore})`,
+                    body: `${home} vs ${away}`
+                })
+            });
+            console.log(`Automatischer Tor-Alarm ausgelöst für ${home} vs ${away} (${hScore}:${aScore})`);
+        } catch (e) {
+            console.error("Fehler beim automatischen Tor-Push:", e);
+        }
+    }
+
     function toggleAdminMode() {
         const adminCard = document.getElementById('adminCard');
         if (isAdmin) {
@@ -654,6 +673,17 @@
                             homeScore = res.pointsTeam1;
                             awayScore = res.pointsTeam2;
                         }
+                    }
+
+                    // --- AUTOMATISCHE TOR-ERKENNUNG ---
+                    if (homeScore !== null && awayScore !== null) {
+                        let prev = previousScores[matchId];
+                        if (prev !== undefined) {
+                            if (homeScore > prev.home || awayScore > prev.away) {
+                                triggerAutomaticGoalPush(homeTeam, awayTeam, homeScore, awayScore);
+                            }
+                        }
+                        previousScores[matchId] = { home: homeScore, away: awayScore };
                     }
 
                     let apiScorers = [];
