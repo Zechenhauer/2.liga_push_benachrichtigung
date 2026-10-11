@@ -514,9 +514,9 @@
             }
 
             const registration = await navigator.serviceWorker.register('./sw.js');
-            await navigator.serviceWorker.ready;
+            await registration.ready;
 
-            const publicKey = 'BOMw0p2Lg7oF2Wb9S4k3x1v8N6m5Q2j9H1t7Y4u8I3o6P2l9K5h8F1d4S7a0G3v6C9x2Z5b8N1m4Q7w0E3r6T9y=';
+            const publicKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Njh8W0=';
             
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
